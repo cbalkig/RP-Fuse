@@ -1,0 +1,27 @@
+--extra-index-url https://download.pytorch.org/whl/cu124; sys_platform != "darwin"
+
+numpy
+pandas
+scipy
+scikit-learn
+tqdm
+pyyaml
+matplotlib
+openpyxl
+pydicom
+nibabel
+SimpleITK
+torch
+torchvision
+monai
+wandb
+
+xgboost
+lightgbm
+catboost
+imbalanced-learn
+shap
+pyradiomics-bhklab
+
+totalsegmentator
+timm

@@ -1,0 +1,512 @@
+RAW_DIR: data
+INPUTS_DIR: data/Inputs
+OUTPUTS_DIR: data/Outputs
+
+INPUTS:
+  PROCESSED: Cohort
+  VIDEOS: Videos
+  TABULAR_DATA: master_clinical_data.xlsx
+
+OUTPUTS:
+  LOGS: Logs
+  EXPERIMENTS: Experiments
+
+SPLIT:
+  SEED: 42
+  TEST_SIZE: 0.20
+  N_FOLDS: 5
+  INNER_VAL_FRAC: 0.15
+  COMPLETE_CASE_MODALITIES: [ ct_plan, pet_plan, contours, dose, plan_params, clinical, rt_tabular ]
+  UNIFIED_FILE: unified_split.csv
+  USE_NESTED_CV: true
+  N_OUTER_FOLDS: 5
+  DEFAULT_TEST_FOLD: 0
+
+PREPROCESS:
+  WINDOW_WIDTH: 1500
+  WINDOW_CENTER: -600
+  VIDEO_FPS: 15
+  GENERATE_PREVIEWS: false
+
+  ONLY_PATIENTS: [ ]
+
+  WORKERS: 4
+
+  STUDY_LAYOUT: true
+
+  MIN_MEANINGFUL_CT: 1
+  MAX_MEANINGFUL_CT: 3
+
+  EXCLUDE_UUIDS:
+    - 6b31d3779b8b
+    - 71e06f0dad4a
+    - f0e7f887f963
+    - e047558cc503
+
+  FORCE_REPROCESS: true
+
+  GENERATE_ALIGNMENT_VIDEO: true
+  VIDEO_DIR: data/Videos
+  VIDEO_SUBDIR_STEP2: "preprocessing"
+  VIDEO_SUBDIR_STEP9: "regenerated"
+
+  REGISTER_PET: true
+  PET_REG_QA_MIN_RATIO: 1.3
+
+  REGISTER_DOSE: true
+
+  COMPUTE_DVH: true
+  DOSE_ALIGN_V20_TOL: 8.0
+  DOSE_ALIGN_MLD_TOL_GY: 3.0
+
+  CT_TOTALSEGMENTATOR_ENABLED: false
+
+  CONTOURS_LUNG_OUTLIER_CC: 10000.0
+  CONTOURS_DROP_LUNG_OUTLIERS: true
+
+  MODALITIES:
+    ct_plan:
+      label: "Planning CT (RT)"
+      enabled: true
+      type: ct
+      source: "RTs/1~{hasta_no}/1~CT1/DCMData"
+      dest_subdir: CT-Plan
+    pet_plan:
+      label: "Planning PET (RT)"
+      enabled: true
+      type: pet
+      source: "RTs/1~{hasta_no}/1~PT1/DCMData"
+      dest_subdir: PET-Plan
+    contours:
+      label: "Structure set / ROI contours (Monaco binary)"
+      enabled: true
+      type: contours
+      source: "RTs/1~{hasta_no}/1~CT1"
+      dest_subdir: Contours
+      patterns: [ "contournames", "*.WC", "info" ]
+    dose:
+      label: "3D dose distribution (Monaco binary)"
+      enabled: true
+      type: dose
+      source: "RTs/1~{hasta_no}/plan"
+      dest_subdir: Dose
+      patterns:
+        - "*/dose.1"
+        - "*/dvhparam.xml"
+        - "*/checksum.1"
+        - "*/rxB_dose.1"
+        - "*/rxB_dvhparam.xml"
+      preserve_relative: true
+    plan_params:
+      label: "Plan parameters (Monaco TPS export)"
+      enabled: true
+      type: passthrough
+      source: "RTs/1~{hasta_no}/plan"
+      dest_subdir: PlanParams
+      patterns:
+        - "*/tel.1"
+        - "*/plan"
+        - "*/plan_comment"
+        - "*/dosenormsettings.xml"
+        - "*/isodosesettings.xml"
+        - "*/rxB_plan"
+        - "*/rxB_plan_comment"
+        - "*/rxB_tel.1"
+        - "*.hyp"
+      preserve_relative: true
+
+  SOURCE_EXCELS:
+    DIR: Files
+    MASTER_FILE: "rp 18*.xlsx"
+    MASTER_SHEET: Sayfa1
+    CLEAN_MASTER_FILE: "Veriler BALKI.xlsx"
+    CURATED_FILE: "*hastalar*hali*.xlsx"
+    CURATED_SHEET: Sayfa1
+  MASTER_OUTPUT: master_clinical_data.xlsx
+
+  GENERATED_FILES:
+    Has_Preview_AVI: "preview.avi"
+
+    Has_Whole_Body: "whole_body.npy"
+    Has_Whole_Body_Meta: "whole_body_spacing.txt"
+
+    Has_Lung: "lung_only.npy"
+    Has_Lung_Meta: "lung_only_spacing.txt"
+
+    Has_Lung_No_Vessels: "lung_only_no_vessels.npy"
+    Has_Lung_No_Vessels_Meta: "lung_only_no_vessels_spacing.txt"
+
+    Has_Tumor: "tumor_only.npy"
+    Has_Tumor_Meta: "tumor_only_spacing.txt"
+
+    Has_GTV_Mask: "gtv_mask.npy"
+    Has_CTV_Mask: "ctv_mask.npy"
+    Has_PTV_Mask: "ptv_mask.npy"
+    Has_Lung_Mask: "lung_mask.npy"
+    Has_Heart_Mask: "heart_mask.npy"
+    Has_Esophagus_Mask: "esophagus_mask.npy"
+    Has_Spinal_Cord_Mask: "spinal_cord_mask.npy"
+    Has_Liver_Mask: "liver_mask.npy"
+    Has_Breast_Mask: "breast_mask.npy"
+
+    Has_Dose_Volume: "dose_volume.npy"
+    Has_Dose_Meta: "dose_volume_meta.txt"
+
+    Has_Plan_Features: "plan_features.json"
+
+    Has_Clinical_Features: "clinical_features.json"
+    Has_RT_Tabular_Features: "rt_tabular_features.json"
+
+TRAIN:
+  DATA:
+    MANIFEST_FILE: clean_cohort_manifest_cv.csv
+    NUM_WORKERS: 2
+    TARGET_SHAPE: [ 128, 128, 128 ]
+    WINDOW_WIDTH: 1500
+    WINDOW_CENTER: -600
+
+  AUGMENTATION:
+    P_FLIP: 0.5
+    P_ROT: 0.5
+    ROT_RANGE: 30
+    P_NOISE: 0.3
+    NOISE_STD: 0.08
+    MIXUP_ALPHA: 0.4
+    P_MIXUP: 0.0
+    P_ELASTIC: 0.5
+    ELASTIC_ALPHA: 15
+    ELASTIC_SIGMA: 3
+
+  MODEL:
+    BACKBONE: resnet18
+    DROPOUT_RATE: 0.5
+    NUM_CLASSES: 2
+    BASE_FILTERS: 8
+
+  TRAINING:
+    K_FOLDS: 5
+    LR: 1.0e-4
+    BATCH_SIZE: 8
+    MAX_EPOCH: 150
+    WEIGHT_DECAY: 1.0e-2
+    FOCAL_GAMMA: 2.0
+    ACCUMULATION_STEPS: 4
+
+  SCHEDULER:
+    MIN_PATIENCE: 5
+    MAX_PATIENCE: 15
+    WARMUP_EPOCHS: 5
+    BEST_IMPROVE_EPS: 1.0e-4
+    POST_BEST_GRACE_EPOCHS: 5
+    METRIC_WEIGHTS:
+      loss: 0.4
+      f1: 0.6
+
+TRAIN_RT:
+  DATA:
+    EXCEL_PATH: master_clinical_data.xlsx
+    RESULTS_DIR: results_rt
+    PRED_DIR: results_rt/patient_predictions
+    TARGET_COL: rp_label_grade2
+    BASE_COLS:
+      - RT_technique
+      - GTV_cc
+      - PTV_cc
+      - lung_V5
+      - lung_V10
+      - lung_V20
+      - MLD
+
+  TRAINING:
+    SEED: 42
+    BATCH_SIZE: 16
+    MAX_EPOCHS: 300
+    LR: 5.0e-4
+    WEIGHT_DECAY: 1.0e-3
+    DROPOUT: 0.4
+    TOP_K_FEATURES: 7
+    N_ENSEMBLE: 5
+    N_MC_SAMPLES: 30
+
+TRAIN_CLINICAL:
+  DATA:
+    EXCEL_PATH: master_clinical_data.xlsx
+    RESULTS_DIR: results_clinical
+    PRED_DIR: results_clinical/patient_predictions
+    TARGET_COL: rp_label_grade2
+    BASE_COLS:
+      - age
+      - gender
+      - ECOG_performance
+      - weight_kg
+      - smoking_packyear
+      - active_smoking
+      - T_stage
+      - N_stage
+      - TNM_stage
+      - tumor_size_cm
+      - tumor_side
+      - tumor_lobe
+      - histopathology
+      - chemo_cycles
+      - PET_fusion
+      - DM
+      - COPD
+      - collagen_vascular_disease
+      - centrilobular_emphysema
+      - bronchiectasis
+      - reticular_pattern
+      - cystic_lung_disease
+      - asbestos_findings
+
+  TRAINING:
+    SEED: 42
+    BATCH_SIZE: 16
+    MAX_EPOCHS: 300
+    LR: 5.0e-4
+    WEIGHT_DECAY: 1.0e-3
+    DROPOUT: 0.4
+    TOP_K_FEATURES: 7
+    N_ENSEMBLE: 5
+    N_MC_SAMPLES: 30
+
+TRAIN_CT:
+  DATA:
+    MANIFEST_FILE: clean_cohort_manifest_cv.csv
+    EXCEL_PATH: master_clinical_data.xlsx
+    RESULTS_DIR: results_ct
+    PRED_DIR: results_ct/patient_predictions
+    TARGET_COL: rp_label_grade2
+    NUM_WORKERS: 8
+    TARGET_SHAPE: [ 128, 128, 128 ]
+    WINDOW_WIDTH: 1500
+    WINDOW_CENTER: -600
+
+    DOSE_WEIGHTED_CROP: false
+    CROP_KEEP_FRACTION: 0.65
+
+    USE_PYRADIOMICS: true
+    PYRADIOMICS_TOP_K: 30
+    PYRADIOMICS_CACHE_DIR: pyradiomics_cache
+
+    CT_VESSEL_COMPARISON: true
+    CT_LUNG_NO_VESSELS: lung_only_no_vessels.npy
+
+  TRAINING:
+    SEED: 42
+    BATCH_SIZE: 16
+    MAX_EPOCHS: 100
+    LR: 1.0e-4
+    WEIGHT_DECAY: 5.0e-2
+    DROPOUT: 0.4
+    N_ENSEMBLE: 5
+    N_MC_SAMPLES: 30
+    ACCUMULATION_STEPS: 2
+    WARMUP_EPOCHS: 5
+    AMP_DTYPE: bf16
+
+  AUGMENTATION:
+    MIXUP_ALPHA: 0.4
+    P_MIXUP: 0.5
+
+  MODEL:
+    BACKBONE_SMALL: resnet18
+    BACKBONE_LARGE: resnet50
+    MEDICALNET_PRETRAINED_R18: medicalnet_weights/resnet_18_23dataset.pth
+    MEDICALNET_PRETRAINED_R50: medicalnet_weights/resnet_50_23dataset.pth
+
+TRAIN_PET:
+  DATA:
+    MANIFEST_FILE: clean_cohort_manifest_cv.csv
+    RESULTS_DIR: results_pet
+    PRED_DIR: results_pet/patient_predictions
+    TARGET_COL: rp_label_grade2
+    NUM_WORKERS: 8
+    TARGET_SHAPE: [ 128, 128, 128 ]
+    SUV_MAX_CLIP: 20.0
+
+  TRAINING:
+    SEED: 42
+    BATCH_SIZE: 16
+    MAX_EPOCHS: 100
+    LR: 1.0e-4
+    WEIGHT_DECAY: 5.0e-2
+    DROPOUT: 0.4
+    N_ENSEMBLE: 5
+    N_MC_SAMPLES: 30
+    ACCUMULATION_STEPS: 2
+    WARMUP_EPOCHS: 5
+    AMP_DTYPE: bf16
+
+  AUGMENTATION:
+    MIXUP_ALPHA: 0.4
+    P_MIXUP: 0.5
+
+  MODEL:
+    BACKBONE_SMALL: resnet18
+    BACKBONE_LARGE: resnet50
+    MEDICALNET_PRETRAINED_R18: medicalnet_weights/resnet_18_23dataset.pth
+    MEDICALNET_PRETRAINED_R50: medicalnet_weights/resnet_50_23dataset.pth
+
+TRAIN_DOSE:
+  DATA:
+    MANIFEST_FILE: clean_cohort_manifest_cv.csv
+    RESULTS_DIR: results_dose
+    PRED_DIR: results_dose/patient_predictions
+    TARGET_COL: rp_label_grade2
+    NUM_WORKERS: 8
+    TARGET_SHAPE: [ 128, 128, 128 ]
+    DOSE_NORM_CGY: 6000.0
+    PERI_TAU_MM: 20.0
+
+  TRAINING:
+    SEED: 42
+    BATCH_SIZE: 16
+    MAX_EPOCHS: 100
+    LR: 1.0e-4
+    WEIGHT_DECAY: 5.0e-2
+    DROPOUT: 0.4
+    N_ENSEMBLE: 5
+    N_MC_SAMPLES: 30
+    ACCUMULATION_STEPS: 2
+    WARMUP_EPOCHS: 5
+    AMP_DTYPE: bf16
+
+  AUGMENTATION:
+    MIXUP_ALPHA: 0.4
+    P_MIXUP: 0.5
+
+  MODEL:
+    BACKBONE_SMALL: resnet18
+    BACKBONE_LARGE: resnet50
+    MEDICALNET_PRETRAINED_R18: medicalnet_weights/resnet_18_23dataset.pth
+    MEDICALNET_PRETRAINED_R50: medicalnet_weights/resnet_50_23dataset.pth
+
+TRAIN_RPFUSE:
+  DATA:
+    RP_ENDPOINT_ENABLED: true
+    RP_ENDPOINT_WINDOW_MONTHS: 6.0
+    RP_MIN_FOLLOWUP_MONTHS: 6.0
+
+    MANIFEST_FILE: clean_cohort_manifest_cv.xlsx
+    EXCEL_PATH: master_clinical_data.xlsx
+    RESULTS_DIR: results_rpfuse
+    RESULTS_SUFFIX: ""
+    PRED_DIR: results_rp_fuse/patient_predictions
+    TARGET_COL: rp_label_grade2
+    NUM_WORKERS: 0
+    CACHE_VOLUMES: true
+    TARGET_SHAPE: [ 128, 128, 128 ]
+    WINDOW_WIDTH: 1500
+    WINDOW_CENTER: -600
+    SUV_MAX_CLIP: 20.0
+    DOSE_NORM_CGY: 6000.0
+    USE_IMAGING: true
+    USE_TABULAR: true
+    USE_PET: true
+    USE_DVH: true
+    LUNG_CROP: true
+    LUNG_CROP_MARGIN: 8
+    USE_DOSE_RESPONSE_GATE: false
+    USE_ANATOMY_GATE: true
+    USE_LOBE_GATE: false
+    USE_VULN_GATE: false
+    USE_REGION_GATE: false
+    PERI_TAU: 20.0
+    PET_ROBUST: true
+    USE_PET_PLUS: true
+    USE_CT_VOL: false
+    USE_EARLY: false
+    USE_EARLY_RAW: false
+    USE_PET_VOL: false
+    USE_DOSE_VOL: false
+
+  MODEL:
+    BACKBONE: MedicalNet3D_R18
+    EMBED_DIM: 128
+    FUSION_HIDDEN: 128
+    SCALAR_ENCODER: linear
+    DOSEGATE_INIT_A: 4.0
+    DOSEGATE_INIT_B: 0.33
+    DOSEGATE_INIT_LAMBDA: 1.0
+    DOSEGATE_LR: 1.0e-2
+    AUX_LOSS_WEIGHT: 0.3
+    GATE_PRETRAIN_EPOCHS: 0
+    LOG_TRAIN_HISTORY: true
+    MEDICALNET_PRETRAINED_R18: medicalnet_weights/resnet_18_23dataset.pth
+    MEDICALNET_PRETRAINED_R50: medicalnet_weights/resnet_50_23dataset.pth
+    BACKBONE_DEPTH: 18
+    DOSE_RESPONSE_K: 4
+    SPOTLIGHT_INIT: 0.4
+
+  TRAINING:
+    SEED: 42
+    BATCH_SIZE: 4
+    MAX_EPOCHS: 100
+    LR: 1.0e-4
+    WEIGHT_DECAY: 5.0e-2
+    DROPOUT: 0.4
+    N_MC_SAMPLES: 30
+    ACCUMULATION_STEPS: 4
+    WARMUP_EPOCHS: 5
+    FREEZE_BACKBONE: true
+    EARLY_STOP_PATIENCE: 15
+    EARLY_STOP_MIN_EPOCHS: 25
+    CHECKPOINT_METRIC: loss
+    AMP_DTYPE: bf16
+
+  AUGMENTATION:
+    P_FLIP: 0.5
+    P_NOISE: 0.3
+    NOISE_STD: 0.05
+    MIXUP_ALPHA: 0.4
+    P_MIXUP: 0.0
+    P_ROT: 0.3
+    ROT_RANGE: 10.0
+    P_SCALE: 0.3
+    SCALE_RANGE: 0.10
+    P_ELASTIC: 0.15
+    ELASTIC_ALPHA: 12.0
+    ELASTIC_SIGMA: 4.0
+    P_GAMMA: 0.3
+    GAMMA_RANGE: [ 0.7, 1.5 ]
+    P_BLUR: 0.2
+    BLUR_SIGMA: 0.7
+
+TRAIN_GATE_CT:
+  TOKEN: early
+  TRAIN_ONLY_GATE: true
+  AS_CHANNEL: true
+  REG: 0
+  CLAMP_B: [ 0.20, 0.50 ]
+  INIT_B: null
+  PROX_NONNEG: true
+  EMBED: 64
+  AUX: 0.0
+  PROGRESSIVE_UNFREEZE: false
+  UNFREEZE_PATIENCE: 6
+  MAX_EPOCHS: 0
+  DOSE_RESPONSE: true
+  DOSE_RESPONSE_K: 4
+  SPOTLIGHT: true
+  SPOTLIGHT_INIT: 0.4
+  HARD_MASK: false
+  HARD_MASK_GY: 20.0
+
+FUSION:
+  CT_FUSION:
+    ENABLED: false
+
+    CT_RESULTS_DIR: "results_ct"
+
+    MODE: "single"
+
+    SINGLE:
+      SUBMODALITY: "ct_plan.lung_only_no_vessels"
+      MODEL: "MedicalNet3D_R18"
+
+    ENSEMBLE:
+      MEMBERS:
+        - { SUBMODALITY: "ct_plan.lung_only_no_vessels", MODEL: "MedicalNet3D_R18" }
+        - { SUBMODALITY: "ct_plan.lung_only",            MODEL: "MedicalNet3D_R18" }
+        - { SUBMODALITY: "ct_plan.tumor_only",           MODEL: "MedicalNet3D_R18" }

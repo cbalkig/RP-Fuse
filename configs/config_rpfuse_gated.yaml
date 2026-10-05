@@ -1,0 +1,16 @@
+EXTENDS: config_rpfuse_scalar.yaml
+
+TRAIN_RPFUSE:
+  DATA:
+    RESULTS_SUFFIX: "_gated"
+    USE_DVH: false
+    USE_CT_VOL: true
+    USE_DOSE_RESPONSE_GATE: true
+    USE_IMAGING_SKLEARN_EXPERT: true
+    GATE_EMB_DIR: results_gate_ct_dose_gate
+
+  MODEL:
+    FUSION_IMAGING_RESIDUAL: true
+    FUSION_ALPHA_INIT_RAW: -2.0
+    FUSION_ALPHA_LR: 1.0e-2
+    IMAGING_TOKEN_BOTTLENECK: 32

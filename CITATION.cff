@@ -1,0 +1,44 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata below."
+title: "RP-Fuse: Adaptive Dose-Gated Multimodal Model for Predicting Radiation Pneumonitis in Non-Small Cell Lung Cancer"
+type: software
+authors:
+  - family-names: "Balkı Gemirter"
+    given-names: "Cavide"
+  - family-names: "Korkmaz Kıraklı"
+    given-names: "Esra"
+  - family-names: "Özdilli"
+    given-names: "Cemre Ceren"
+  - family-names: "Çırak"
+    given-names: "Ali Kadri"
+  - family-names: "Korkmaz"
+    given-names: "Emin Erkan"
+  - family-names: "Goularas"
+    given-names: "Dionysis"
+repository-code: "https://github.com/cbalkig/RP-Fuse"
+license: CC-BY-NC-4.0
+keywords:
+  - radiation pneumonitis
+  - non-small cell lung cancer
+  - multimodal fusion
+  - deep learning
+  - radiotherapy
+preferred-citation:
+  type: article
+  title: "RP-Fuse: Development of an Adaptive Dose-Gated Multimodal Model for Predicting Radiation Pneumonitis in Non-Small Cell Lung Cancer"
+  authors:
+    - family-names: "Balkı Gemirter"
+      given-names: "Cavide"
+    - family-names: "Korkmaz Kıraklı"
+      given-names: "Esra"
+    - family-names: "Özdilli"
+      given-names: "Cemre Ceren"
+    - family-names: "Çırak"
+      given-names: "Ali Kadri"
+    - family-names: "Korkmaz"
+      given-names: "Emin Erkan"
+    - family-names: "Goularas"
+      given-names: "Dionysis"
+  journal: "Applied Sciences"
+  year: 2026
+  notes: "submitted"

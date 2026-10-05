@@ -1,0 +1,29 @@
+EXTENDS: config.yaml
+
+TRAIN_RPFUSE:
+  DATA:
+    RESULTS_SUFFIX: "_scalar"
+    USE_CONV_GATE: true
+    GATE_EMB_DIR: ""
+    DVH_SOURCE: dosimetrics
+
+  MODEL:
+    SCALAR_ENCODER: mlp
+    SPLIT_TAB: true
+    TAB_KEEP: clinical
+    FUSION_TEAM: true
+    FUSION_TEAM_HEADS: 4
+    FUSION_TEAM_LAYERS: 1
+    FUSION_TEAM_LOGIT: true
+    FUSION_MODALITY_DROP: 0.2
+    FUSION_ALPHA_INIT_RAW: 0.5
+    FUSION_ALPHA_LR: 0.0
+    SKLEARN_EXPERTS: true
+    SKLEARN_EXPERT_MODELS:
+      tab: mlp_128_64_32
+      clinical: nn_simple
+      rt: nn_simple
+      dvh: lgbm
+      petplus: nn_attn
+    EXPERT_CROSSFIT: true
+    EXPERT_CROSSFIT_FOLDS: 5

@@ -1,0 +1,12 @@
+EXTENDS: config_gate_ct.yaml
+
+TRAIN_RPFUSE:
+  DATA:
+    RESULTS_SUFFIX: "_no_gate"
+    USE_DOSE_RESPONSE_GATE: false
+    GATE_ASSERT_LEARNABLE: false
+    GATE_ASSERT_CURVE: false
+
+TRAIN_GATE_CT:
+  NO_GATE: true
+  DOSE_RESPONSE: false

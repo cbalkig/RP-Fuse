@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+.idea/
+.DS_Store
+data/
+logs/
+wandb/
+catboost_info/
+medicalnet_weights/
+credentials.json
+wandb_credentials.json

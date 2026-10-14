@@ -1,6 +1,0 @@
-EXTENDS: config_rpfuse_gated.yaml
-
-TRAIN_RPFUSE:
-  DATA:
-    RESULTS_SUFFIX: "_no_gate"
-    GATE_EMB_DIR: results_gate_ct_no_gate

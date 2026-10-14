@@ -9,11 +9,9 @@ INPUTS:
 
 OUTPUTS:
   LOGS: Logs
-  EXPERIMENTS: Experiments
 
 SPLIT:
   SEED: 42
-  TEST_SIZE: 0.20
   N_FOLDS: 5
   INNER_VAL_FRAC: 0.15
   COMPLETE_CASE_MODALITIES: [ ct_plan, pet_plan, contours, dose, plan_params, clinical, rt_tabular ]
@@ -158,13 +156,6 @@ PREPROCESS:
     Has_RT_Tabular_Features: "rt_tabular_features.json"
 
 TRAIN:
-  DATA:
-    MANIFEST_FILE: clean_cohort_manifest_cv.csv
-    NUM_WORKERS: 2
-    TARGET_SHAPE: [ 128, 128, 128 ]
-    WINDOW_WIDTH: 1500
-    WINDOW_CENTER: -600
-
   AUGMENTATION:
     P_FLIP: 0.5
     P_ROT: 0.5
@@ -177,37 +168,8 @@ TRAIN:
     ELASTIC_ALPHA: 15
     ELASTIC_SIGMA: 3
 
-  MODEL:
-    BACKBONE: resnet18
-    DROPOUT_RATE: 0.5
-    NUM_CLASSES: 2
-    BASE_FILTERS: 8
-
-  TRAINING:
-    K_FOLDS: 5
-    LR: 1.0e-4
-    BATCH_SIZE: 8
-    MAX_EPOCH: 150
-    WEIGHT_DECAY: 1.0e-2
-    FOCAL_GAMMA: 2.0
-    ACCUMULATION_STEPS: 4
-
-  SCHEDULER:
-    MIN_PATIENCE: 5
-    MAX_PATIENCE: 15
-    WARMUP_EPOCHS: 5
-    BEST_IMPROVE_EPS: 1.0e-4
-    POST_BEST_GRACE_EPOCHS: 5
-    METRIC_WEIGHTS:
-      loss: 0.4
-      f1: 0.6
-
 TRAIN_RT:
   DATA:
-    EXCEL_PATH: master_clinical_data.xlsx
-    RESULTS_DIR: results_rt
-    PRED_DIR: results_rt/patient_predictions
-    TARGET_COL: rp_label_grade2
     BASE_COLS:
       - RT_technique
       - GTV_cc
@@ -217,22 +179,8 @@ TRAIN_RT:
       - lung_V20
       - MLD
 
-  TRAINING:
-    SEED: 42
-    BATCH_SIZE: 16
-    MAX_EPOCHS: 300
-    LR: 5.0e-4
-    WEIGHT_DECAY: 1.0e-3
-    DROPOUT: 0.4
-    TOP_K_FEATURES: 7
-    N_ENSEMBLE: 5
-    N_MC_SAMPLES: 30
-
 TRAIN_CLINICAL:
   DATA:
-    EXCEL_PATH: master_clinical_data.xlsx
-    RESULTS_DIR: results_clinical
-    PRED_DIR: results_clinical/patient_predictions
     TARGET_COL: rp_label_grade2
     BASE_COLS:
       - age
@@ -258,17 +206,6 @@ TRAIN_CLINICAL:
       - reticular_pattern
       - cystic_lung_disease
       - asbestos_findings
-
-  TRAINING:
-    SEED: 42
-    BATCH_SIZE: 16
-    MAX_EPOCHS: 300
-    LR: 5.0e-4
-    WEIGHT_DECAY: 1.0e-3
-    DROPOUT: 0.4
-    TOP_K_FEATURES: 7
-    N_ENSEMBLE: 5
-    N_MC_SAMPLES: 30
 
 TRAIN_CT:
   DATA:

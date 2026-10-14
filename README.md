@@ -90,10 +90,8 @@ and override only the keys it changes.
 |---|---|
 | `config.yaml` | base settings |
 | `config_gate_ct.yaml` | adaptive dose gate on planning CT and dose map |
-| `config_gate_ct_nogate.yaml` | same encoder with uniform pooling |
 | `config_rpfuse_scalar.yaml` | RP-Fuse *Scalar* |
 | `config_rpfuse_gated.yaml` | RP-Fuse *Gated* |
-| `config_rpfuse_no_gate.yaml` | RP-Fuse *Gated* with the gate removed |
 
 ## Reproducing the paper
 
@@ -114,17 +112,15 @@ Single-modality benchmarks (Table 4):
     python train_pet.py
     python train_dose.py
 
-Adaptive dose gate (Table 5). Both runs export the embeddings that the fusion
+Adaptive dose gate (Table 5). The run exports the embeddings that the fusion
 reads:
 
     RPFUSE_CONFIG=config_gate_ct.yaml python train_gate_ct.py
-    RPFUSE_CONFIG=config_gate_ct_nogate.yaml python train_gate_ct.py
 
 Fusion (Table 6):
 
     RPFUSE_CONFIG=config_rpfuse_scalar.yaml python train_rpfuse.py
     RPFUSE_CONFIG=config_rpfuse_gated.yaml python train_rpfuse.py
-    RPFUSE_CONFIG=config_rpfuse_no_gate.yaml python train_rpfuse.py
     python tools/ensemble.py
 
 Reimplemented reference methods (Table 7):

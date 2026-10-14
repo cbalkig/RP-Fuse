@@ -1,5 +1,7 @@
 # RP-Fuse
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23377120.svg)](https://doi.org/10.5281/zenodo.23377120)
+
 > ## ⚠️ NOTICE
 > **This repository contains the official code for the manuscript
 > "RP-Fuse: Development of an Adaptive Dose-Gated Multimodal Model for
@@ -158,8 +160,9 @@ publication.
 
 ## Citation
 
-Citation metadata is provided in [CITATION.cff](CITATION.cff). To cite the
-paper:
+This repository is archived on Zenodo with the DOI
+[10.5281/zenodo.23377120](https://doi.org/10.5281/zenodo.23377120). Citation
+metadata is provided in [CITATION.cff](CITATION.cff). To cite the paper:
 
     @article{balkigemirter2026rpfuse,
       title   = {RP-Fuse: Development of an Adaptive Dose-Gated Multimodal Model

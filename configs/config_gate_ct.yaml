@@ -33,3 +33,9 @@ TRAIN_GATE_CT:
   CLAMP_B: null
   FOCAL_GAMMA: 2.0
   EXPORT_EMB: true
+  # learnable threshold: pooled feature carries the share of the lung the curve admits,
+  # thresholds train at their own constant rate (all four off = the gate reported in the paper)
+  VOLUME_FRACTION: true
+  VOLUME_FRACTION_SCALE: 10
+  THRESH_LR: 1.0e-2
+  GATE_LR_CONSTANT: true

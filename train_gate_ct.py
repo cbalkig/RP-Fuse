@@ -79,6 +79,17 @@ GATE_DOSE_RESPONSE   = bool(dg._cfg_alias(_gcfg, "DOSE_RESPONSE", "NTCP", False)
 GATE_DOSE_RESPONSE_K = int(dg._cfg_alias(_gcfg, "DOSE_RESPONSE_K", "NTCP_K", 4))
 GATE_DOSE_RESPONSE_INIT_GY = float(dg._cfg_alias(_gcfg, "DOSE_RESPONSE_INIT_GY", "NTCP_INIT_GY", 20.0))
 GATE_DOSE_RESPONSE_TRANSITION_GY = float(dg._cfg_alias(_gcfg, "DOSE_RESPONSE_TRANSITION_GY", "NTCP_TRANSITION_GY", dg.DOSE_RESPONSE_TRANSITION_GY))
+# THRESH_LR gives the curve thresholds (b_raw) their own optimiser group and learning rate;
+# GATE_LR_CONSTANT keeps the gate groups out of the plateau decay. Both default off.
+_thr_lr = _gcfg.get("THRESH_LR", None)
+GATE_THRESH_LR   = float(_thr_lr) if _thr_lr is not None else None
+GATE_LR_CONSTANT = _gflag("GATE_LR_CONSTANT", False)
+# VOLUME_FRACTION appends V_phi = sum(phi)/sum(healthy lung), the share of the lung the curve
+# admits, to the pooled feature and adds it to the logit through a zero-initialised linear
+# term, so the loss sees how much lung the curve admits and not only which voxels it
+# favours. VOLUME_FRACTION_SCALE sets its unit (10 = per 10 % of the lung). Default off.
+GATE_VOLUME_FRACTION = _gflag("VOLUME_FRACTION", False)
+GATE_VOLFRAC_SCALE   = float(_gcfg.get("VOLUME_FRACTION_SCALE", 10.0))
 GATE_SPOTLIGHT      = _gflag("SPOTLIGHT", False)
 GATE_SPOTLIGHT_INIT = float(_gcfg.get("SPOTLIGHT_INIT", 0.4))
 GATE_DISPERSION = _gflag("DISPERSION", False)
@@ -134,12 +145,14 @@ RUN_CONFIG = {
     "unfreeze_patience": GATE_UNFREEZE_PATIENCE,
     "max_epochs": (GATE_MAX_EPOCHS or dg.MAX_EPOCHS),
     "ntcp": GATE_DOSE_RESPONSE, "ntcp_k": GATE_DOSE_RESPONSE_K, "ntcp_init_gy": GATE_DOSE_RESPONSE_INIT_GY,
+    "volume_fraction": GATE_VOLUME_FRACTION, "volume_fraction_scale": GATE_VOLFRAC_SCALE,
     "spotlight": GATE_SPOTLIGHT, "spotlight_init": GATE_SPOTLIGHT_INIT,
     "hard_mask": HARD_MASK, "hard_mask_gy": HARD_MASK_GY, "no_gate": NO_GATE,
     "aug_p_flip": dg.P_FLIP, "aug_p_noise": dg.P_NOISE, "aug_noise_std": dg.NOISE_STD,
     "aug_p_mixup": dg.P_MIXUP, "aug_p_rot": dg.P_ROT, "aug_p_scale": dg.P_SCALE,
     "aug_p_elastic": dg.P_ELASTIC, "aug_p_gamma": dg.P_GAMMA, "aug_p_blur": dg.P_BLUR,
     "batch_size": dg.BATCH_SIZE, "lr": dg.LR, "gate_lr": dg.GATE_LR,
+    "thresh_lr": GATE_THRESH_LR, "gate_lr_constant": GATE_LR_CONSTANT,
     "weight_decay": dg.WEIGHT_DECAY, "dropout": dg.DROPOUT,
     "warmup_epochs": dg.WARMUP_EPOCHS,
     "early_stop_patience": dg.EARLY_STOP_PATIENCE,
@@ -347,6 +360,11 @@ def _gate_vars(gp, model=None):
             d["lat_weight"] = round(float(F.softplus(gp.lat_raw)), 4)
     d["f"] = (round(float(torch.sigmoid(model.f_raw)), 4)
               if (model is not None and GATE_SPOTLIGHT and hasattr(model, "f_raw")) else 1.0)
+    if model is not None and getattr(model, "volfrac", False):
+        with torch.no_grad():
+            _vw = model.gate.vol_head.weight.float()
+            d["vol_beta"] = round(float(_vw[1, 0] - _vw[0, 0]), 4)
+            d["vol_scale"] = GATE_VOLFRAC_SCALE
     return d
 
 
@@ -395,6 +413,12 @@ class GateNet(nn.Module):
         E = GATE_EMBED
         _pdim = (fdim * 3 if (self.ntcp and GATE_BAND_POOLING)
                  else fdim * 2 if (self.ntcp and GATE_DISPERSION) else fdim)
+        self.volfrac = bool(self.ntcp and GATE_VOLUME_FRACTION)
+        if self.volfrac:
+            _pdim += 1
+            # on the gate module, so it trains at the gate learning rate without decay
+            self.gate.vol_head = nn.Linear(1, 2, bias=False)
+            nn.init.zeros_(self.gate.vol_head.weight)
         self.proj = nn.Sequential(nn.Linear(_pdim, E), nn.GELU())
         if len(self.tokens) > 1:
             self.scorer = nn.Sequential(nn.Linear(E, E // 2), nn.Tanh(), nn.Linear(E // 2, 1))
@@ -425,7 +449,23 @@ class GateNet(nn.Module):
         ipsi = ipsi * (mass > 0).to(g.dtype).view(B, 1, 1, 1, 1)
         return g * (1.0 + F.softplus(self.gate.lat_raw) * ipsi)
 
+    def _vol_frac(self, gw, lungw):
+        """V_phi per patient in units of VOLUME_FRACTION_SCALE; both maps are average-pooled
+        to the feature grid, which keeps their means, so the ratio is the full-resolution one."""
+        num = gw.flatten(2).sum(-1)
+        if lungw is None:
+            den = torch.full_like(num, float(gw[0].numel()))
+        else:
+            den = lungw.flatten(2).sum(-1).clamp_min(1e-6)
+        return GATE_VOLFRAC_SCALE * num / den
+
     def _pool(self, fmap, gw, lungw=None):
+        out = self._pool_core(fmap, gw, lungw)
+        if self.volfrac:
+            out = torch.cat([out, self._vol_frac(gw, lungw)], dim=1)
+        return out
+
+    def _pool_core(self, fmap, gw, lungw=None):
         if GATE_CONTENT_ATTN:
             scores = self.att_score(fmap) + (gw + 1e-6).log()
             w = torch.softmax(scores.flatten(2), dim=-1)
@@ -472,9 +512,13 @@ class GateNet(nn.Module):
             fmap = self.backbone.forward_map(x)
             gw = F.adaptive_avg_pool3d(g, fmap.shape[2:])
             lungw = (F.adaptive_avg_pool3d(anat[:, 0:1], fmap.shape[2:])
-                     if (GATE_BAND_POOLING and anat is not None) else None)
-            emb = self.proj(self._pool(fmap, gw, lungw))
-            return {"logit_final": self.head(emb), "logit_early": self.aux["early"](emb)}
+                     if ((GATE_BAND_POOLING or self.volfrac) and anat is not None) else None)
+            pooled = self._pool(fmap, gw, lungw)
+            emb = self.proj(pooled)
+            logit = self.head(emb)
+            if self.volfrac:
+                logit = logit + self.gate.vol_head(pooled[:, -1:])
+            return {"logit_final": logit, "logit_early": self.aux["early"](emb)}
         g = self.gate.gate(dose, anat, ct=ct)
         ctg = self._spotlight(ct, g) if GATE_SPOTLIGHT else self.gate(ct, dose, anat)
         emb = {t: self._emb(t, ct, ctg, pet, dose, g) for t in self.tokens}
@@ -506,7 +550,7 @@ class GateNet(nn.Module):
             fmap = self.backbone.forward_map(x)
             gw = F.adaptive_avg_pool3d(g, fmap.shape[2:])
             lungw = (F.adaptive_avg_pool3d(anat[:, 0:1], fmap.shape[2:])
-                     if (GATE_BAND_POOLING and anat is not None) else None)
+                     if ((GATE_BAND_POOLING or self.volfrac) and anat is not None) else None)
             return self._pool(fmap, gw, lungw)
         g = self.gate.gate(dose, anat, ct=ct)
         ctg = self._spotlight(ct, g) if GATE_SPOTLIGHT else self.gate(ct, dose, anat)
@@ -592,6 +636,33 @@ def _unfreeze_module(module, opt, lr, wd):
     return sum(p.numel() for p in ps)
 
 
+def _gate_param_groups(model):
+    """Optimiser groups (readout | gate curve | thresholds if THRESH_LR) and the scheduler
+    floor: per group when GATE_LR_CONSTANT pins the gate groups at their own rate."""
+    gate_all = list(model.gate.parameters()) + ([model.f_raw] if GATE_SPOTLIGHT else [])
+    thr_p = []
+    if GATE_THRESH_LR is not None:
+        b_raw = getattr(model.gate, "b_raw", None)
+        if isinstance(b_raw, nn.Parameter):
+            thr_p = [b_raw]
+        else:
+            log.warning("THRESH_LR=%s set but the gate has no b_raw control points; ignored.", GATE_THRESH_LR)
+    gate_p = [p for p in gate_all if not any(p is q for q in thr_p)]
+    other_p = [p for n, p in model.named_parameters()
+               if p.requires_grad and not n.startswith("gate.") and n != "f_raw"]
+    groups = [{"params": other_p, "lr": dg.LR, "weight_decay": dg.WEIGHT_DECAY, "floor": 1e-7},
+              {"params": gate_p, "lr": dg.GATE_LR, "weight_decay": 0.0,
+               "floor": dg.GATE_LR if GATE_LR_CONSTANT else 1e-7},
+              {"params": thr_p, "lr": GATE_THRESH_LR or 0.0, "weight_decay": 0.0,
+               "floor": GATE_THRESH_LR if (GATE_LR_CONSTANT and GATE_THRESH_LR) else 1e-7}]
+    groups = [g for g in groups if g["params"]]
+    floors = [g.pop("floor") for g in groups]
+    if thr_p:
+        log.info("  gate thresholds (b_raw) in their own group: lr=%g%s", GATE_THRESH_LR,
+                 " (constant)" if GATE_LR_CONSTANT else "")
+    return groups, (floors if GATE_LR_CONSTANT else 1e-7)
+
+
 def train_one_gate(tl, vl, device, tr_lbl, seed_offset, train_eval_loader=None,
                    max_epochs=None, live_csv=None, fold_tag=None, ext_outer=0, ext_inner=0,
                    test_loader=None):
@@ -606,12 +677,7 @@ def train_one_gate(tl, vl, device, tr_lbl, seed_offset, train_eval_loader=None,
         config=RUN_CONFIG,
         reinit=True
     )
-    gate_p = list(model.gate.parameters()) + ([model.f_raw] if GATE_SPOTLIGHT else [])
-    other_p = [p for n, p in model.named_parameters()
-               if p.requires_grad and not n.startswith("gate.") and n != "f_raw"]
-    groups = [{"params": other_p, "lr": dg.LR, "weight_decay": dg.WEIGHT_DECAY},
-              {"params": gate_p, "lr": dg.GATE_LR, "weight_decay": 0.0}]
-    groups = [g for g in groups if g["params"]]
+    groups, min_lrs = _gate_param_groups(model)
     opt = torch.optim.AdamW(groups)
     crit = FocalLoss(alpha=_gate_alpha(tr_lbl, device), gamma=GATE_FOCAL_GAMMA)
     if GATE_FOCAL_GAMMA_FINAL != GATE_FOCAL_GAMMA or GATE_CLASS_WEIGHT_POWER != 1.0:
@@ -624,7 +690,7 @@ def train_one_gate(tl, vl, device, tr_lbl, seed_offset, train_eval_loader=None,
     checkpoint_metric = str(_gcfg.get("CHECKPOINT_METRIC", getattr(dg, "CHECKPOINT_METRIC", "loss"))).lower()
     sched_mode = "min" if checkpoint_metric == "loss" else "max"
     sched = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, mode=sched_mode, factor=0.5,
-                                                       patience=7, min_lr=1e-7)
+                                                       patience=7, min_lr=min_lrs)
     best_auc, best_loss, best_state, best_thr, ep_count, no_imp, best_epoch = -1.0, float("inf"), None, 0.5, 0, 0, 0
     min_epochs = dg.EARLY_STOP_MIN_EPOCHS
     stages, stage_i = [], 0
@@ -907,6 +973,9 @@ def gate_main(smoke: bool = False):
             _extra.append("region=%+.2f" % _gp("region_weight"))
         if GATE_SPOTLIGHT:
             _extra.append("f=%.2f" % float(torch.sigmoid(model.f_raw)))
+        if getattr(model, "volfrac", False):
+            _vw = model.gate.vol_head.weight.detach().float()
+            _extra.append("betaV=%+.3f" % float(_vw[1, 0] - _vw[0, 0]))
         init_steep_ = float(getattr(gpf, "init_steepness", dg.DG_INIT_A))
         init_thr_ = float(getattr(gpf, "init_dose_thresh", dg.DG_INIT_B))
         log.info("    gate[fold %d] | steepness=%.2f  dose_thresh=%.3f (~%.1f Gy)%s   "

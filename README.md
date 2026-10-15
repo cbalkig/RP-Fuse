@@ -93,6 +93,22 @@ and override only the keys it changes.
 | `config_rpfuse_scalar.yaml` | RP-Fuse *Scalar* |
 | `config_rpfuse_gated.yaml` | RP-Fuse *Gated* |
 
+**Learnable threshold (default).** The gate in the paper pools a weighted mean, so the
+loss sees which voxels the curve favours but not how much lung it admits, and the
+thresholds train at the gate learning rate of 1e-3. On the 87-patient cohort its curve
+therefore stays close to the 20 Gy initialisation. `config_gate_ct.yaml` switches on four
+options of `train_gate_ct.py` so the threshold can be learned on cohorts with more events:
+
+| key (`TRAIN_GATE_CT`) | effect |
+|---|---|
+| `VOLUME_FRACTION` | appends the share of the healthy lung the curve admits to the pooled feature and adds it to the logit through a zero-initialised linear term |
+| `VOLUME_FRACTION_SCALE` | unit of that share (10 = per 10 % of the lung) |
+| `THRESH_LR` | own learning rate for the curve thresholds |
+| `GATE_LR_CONSTANT` | keeps the gate learning rates out of the plateau decay |
+
+To reproduce the paper's gate, set `VOLUME_FRACTION` and `GATE_LR_CONSTANT` to `false` and
+remove `THRESH_LR` in `config_gate_ct.yaml`.
+
 ## Reproducing the paper
 
 Preprocessing and derived features:

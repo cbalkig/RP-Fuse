@@ -1,12 +1,12 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite it using the metadata below."
+message: "If you use this software, please cite the paper below (preferred-citation)."
 title: "RP-Fuse: Adaptive Dose-Gated Multimodal Model for Predicting Radiation Pneumonitis in Non-Small Cell Lung Cancer"
 type: software
 authors:
-  - family-names: "Balkı Gemirter"
-    given-names: "Cavide"
-  - family-names: "Korkmaz Kıraklı"
-    given-names: "Esra"
+  - family-names: "Gemirter"
+    given-names: "Cavide Balkı"
+  - family-names: "Kıraklı"
+    given-names: "Esra Korkmaz"
   - family-names: "Özdilli"
     given-names: "Cemre Ceren"
   - family-names: "Çırak"
@@ -17,6 +17,10 @@ authors:
     given-names: "Dionysis"
 repository-code: "https://github.com/cbalkig/RP-Fuse"
 license: CC-BY-NC-4.0
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.23377120
+    description: "Zenodo archive of this repository"
 keywords:
   - radiation pneumonitis
   - non-small cell lung cancer
@@ -27,10 +31,10 @@ preferred-citation:
   type: article
   title: "RP-Fuse: Development of an Adaptive Dose-Gated Multimodal Model for Predicting Radiation Pneumonitis in Non-Small Cell Lung Cancer"
   authors:
-    - family-names: "Balkı Gemirter"
-      given-names: "Cavide"
-    - family-names: "Korkmaz Kıraklı"
-      given-names: "Esra"
+    - family-names: "Gemirter"
+      given-names: "Cavide Balkı"
+    - family-names: "Kıraklı"
+      given-names: "Esra Korkmaz"
     - family-names: "Özdilli"
       given-names: "Cemre Ceren"
     - family-names: "Çırak"
@@ -40,5 +44,9 @@ preferred-citation:
     - family-names: "Goularas"
       given-names: "Dionysis"
   journal: "Applied Sciences"
+  volume: 16
+  issue: 21
+  start: 10497
   year: 2026
-  notes: "submitted"
+  doi: "10.3390/app162110497"
+  url: "https://doi.org/10.3390/app162110497"

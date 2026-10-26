@@ -1,21 +1,18 @@
 # RP-Fuse
 
+[![Paper DOI](https://img.shields.io/badge/DOI-10.3390%2Fapp162110497-blue)](https://doi.org/10.3390/app162110497)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23377120.svg)](https://doi.org/10.5281/zenodo.23377120)
 
-> ## ⚠️ NOTICE
-> **This repository contains the official code for the manuscript
-> "RP-Fuse: Development of an Adaptive Dose-Gated Multimodal Model for
-> Predicting Radiation Pneumonitis in Non-Small Cell Lung Cancer",
-> currently under peer review at MDPI *Applied Sciences*.
-> Unauthorized use, distribution, or claiming authorship is strictly
-> prohibited prior to official publication.**
-
-Code for the paper
+Official code for the paper
 
 > **RP-Fuse: Development of an Adaptive Dose-Gated Multimodal Model for
 > Predicting Radiation Pneumonitis in Non-Small Cell Lung Cancer**
-> C. Balki Gemirter, E. Korkmaz Kıraklı, C. C. Özdilli, A. K. Çırak,
-> E. E. Korkmaz, D. Goularas. Submitted to *Applied Sciences*, 2026.
+> C. B. Gemirter, E. K. Kıraklı, C. C. Özdilli, A. K. Çırak,
+> E. E. Korkmaz, D. Goularas.
+> *Applied Sciences* 2026, 16(21), 10497.
+> [https://doi.org/10.3390/app162110497](https://doi.org/10.3390/app162110497)
+
+**If you use this code, you must cite the paper** (see [Citation](#citation)).
 
 RP-Fuse predicts grade 2 or higher radiation pneumonitis within six months of
 thoracic radiotherapy from five modalities: the clinical record, planning CT,
@@ -151,22 +148,27 @@ Calibration and decision-curve analysis:
 This code is released under the
 [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) license:
 free for academic and other non-commercial use with attribution. See
-[LICENSE](LICENSE) for details and the notice above regarding use prior to
-publication.
+[LICENSE](LICENSE) for details.
 
 ## Citation
 
-This repository is archived on Zenodo with the DOI
-[10.5281/zenodo.23377120](https://doi.org/10.5281/zenodo.23377120). Citation
-metadata is provided in [CITATION.cff](CITATION.cff). To cite the paper:
+**Any use of this code requires citing the paper below.** Citation metadata is
+also provided in [CITATION.cff](CITATION.cff), and the repository itself is
+archived on Zenodo with the DOI
+[10.5281/zenodo.23377120](https://doi.org/10.5281/zenodo.23377120).
 
-    @article{balkigemirter2026rpfuse,
-      title   = {RP-Fuse: Development of an Adaptive Dose-Gated Multimodal Model
-                 for Predicting Radiation Pneumonitis in Non-Small Cell Lung Cancer},
-      author  = {Balki Gemirter, Cavide and Korkmaz K{\i}rakl{\i}, Esra and
-                 {\"O}zdilli, Cemre Ceren and {\c{C}}{\i}rak, Ali Kadri and
-                 Korkmaz, Emin Erkan and Goularas, Dionysis},
-      journal = {Applied Sciences},
-      year    = {2026},
-      note    = {submitted}
+    @article{gemirter2026rpfuse,
+      title     = {RP-Fuse: Development of an Adaptive Dose-Gated Multimodal Model
+                   for Predicting Radiation Pneumonitis in Non-Small Cell Lung Cancer},
+      author    = {Gemirter, Cavide Balk{\i} and K{\i}rakl{\i}, Esra Korkmaz and
+                   {\"O}zdilli, Cemre Ceren and {\c{C}}{\i}rak, Ali Kadri and
+                   Korkmaz, Emin Erkan and Goularas, Dionysis},
+      journal   = {Applied Sciences},
+      volume    = {16},
+      number    = {21},
+      pages     = {10497},
+      year      = {2026},
+      publisher = {MDPI},
+      doi       = {10.3390/app162110497},
+      url       = {https://doi.org/10.3390/app162110497}
     }

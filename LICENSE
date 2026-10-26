@@ -16,8 +16,8 @@ Human-readable summary: https://creativecommons.org/licenses/by-nc/4.0/
 
 ADDITIONAL NOTICE
 
-This repository contains the official code for a manuscript currently under
-peer review at MDPI Applied Sciences. Unauthorized use, redistribution, or
-claiming authorship of this code or the associated method is strictly
-prohibited prior to official publication. For permissions beyond the scope
-of this license, contact the corresponding author.
+This repository contains the official code for the paper published in
+MDPI Applied Sciences 2026, 16(21), 10497
+(https://doi.org/10.3390/app162110497). Any use of this code requires
+citing the paper. For permissions beyond the scope of this license,
+contact the corresponding author.

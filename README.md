@@ -12,7 +12,7 @@ Official code for the paper
 > *Applied Sciences* 2026, 16(21), 10497.
 > [https://doi.org/10.3390/app162110497](https://doi.org/10.3390/app162110497)
 
-**If you use this code, you must cite the paper** (see [Citation](#citation)).
+If you use this code, please cite the paper (see [Citation](#citation)).
 
 RP-Fuse predicts grade 2 or higher radiation pneumonitis within six months of
 thoracic radiotherapy from five modalities: the clinical record, planning CT,
@@ -148,11 +148,14 @@ Calibration and decision-curve analysis:
 This code is released under the
 [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) license:
 free for academic and other non-commercial use with attribution. See
-[LICENSE](LICENSE) for details.
+[LICENSE](LICENSE) for the full license text. Copyright (c) 2026 Cavide Balkı
+Gemirter, Esra Korkmaz Kıraklı, Cemre Ceren Özdilli, Ali Kadri Çırak, Emin
+Erkan Korkmaz, Dionysis Goularas. For permissions beyond the scope of this
+license (e.g. commercial use), contact the corresponding author.
 
 ## Citation
 
-**Any use of this code requires citing the paper below.** Citation metadata is
+Please cite the paper below when you use this code; it is the attribution the license asks for. Citation metadata is
 also provided in [CITATION.cff](CITATION.cff), and the repository itself is
 archived on Zenodo with the DOI
 [10.5281/zenodo.23377120](https://doi.org/10.5281/zenodo.23377120).
